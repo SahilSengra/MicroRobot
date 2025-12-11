@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pan & Tilt Servo Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.sending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.success {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .control-section {
+            margin-bottom: 30px;
+        }
+
+        .control-section h2 {
+            color: #764ba2;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .slider-container {
+            margin-bottom: 25px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .slider-value {
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-dance {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .btn-dance:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(250, 112, 154, 0.4);
+        }
+
+        .btn-center {
+            grid-column: span 3;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-center:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .joystick {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .joystick-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 5px;
+        }
+
+        .joystick-btn {
+            width: 80px;
+            height: 80px;
+            font-size: 1.5em;
+            padding: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .joystick-btn.center {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mini ROBOT 🤖</h1>
+        
+        <div class="status ready" id="status" style="display: none;">Ready</div>
+
+        <div class="control-section">
+            <h2>Manual Control</h2>
+            
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Pan (Horizontal)</span>
+                    <span class="slider-value" id="panValue">90°</span>
+                </div>
+                <input type="range" id="panSlider" min="0" max="180" value="90">
+            </div>
+
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Tilt (Vertical)</span>
+                    <span class="slider-value" id="tiltValue">90°</span>
+                </div>
+                <input type="range" id="tiltSlider" min="0" max="180" value="90">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="sendCommand()">Apply Position</button>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h2>Joystick Control</h2>
+            <div class="joystick">
+                <div class="joystick-grid">
+                    <div></div>
+                    <button class="btn-primary joystick-btn" onclick="moveDirection('up')">↑</button>
+                    <div></div>
+                    <button class="btn-primary joystick-btn" onclick="moveDirection('left')">←</button>
+                    <button class="joystick-btn center" onclick="centerPosition()">●</button>
+                    <button class="btn-primary joystick-btn" onclick="moveDirection('right')">→</button>
+                    <div></div>
+                    <button class="btn-primary joystick-btn" onclick="moveDirection('down')">↓</button>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h2>Predefined Actions</h2>
+            <div class="button-group">
+                <button class="btn-secondary" onclick="customLookup()">Look Up</button>
+                <button class="btn-secondary" onclick="customScan()">Scan</button>
+                <button class="btn-secondary" onclick="customSweep()">Sweep</button>
+                <button class="btn-dance" onclick="danceMode()">💃 Dance</button>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h2>Quick Presets</h2>
+            <div class="button-group">
+                <button class="btn-secondary" onclick="preset(0, 90)">Left</button>
+                <button class="btn-secondary" onclick="preset(90, 90)">Center</button>
+                <button class="btn-secondary" onclick="preset(180, 90)">Right</button>
+                <button class="btn-secondary" onclick="preset(90, 180)">Up</button>
+                <button class="btn-secondary" onclick="preset(90, 0)">Down</button>
+                <button class="btn-secondary" onclick="preset(45, 45)">Corner</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://wizklub.com/api/secured/wiziot-poll-request/';
+        const API_ACCESS_KEY = 'Zk1jSjR4SHRzdGEyUkJ3WEJrSDQ=';
+        const API_SECRET_KEY = 'TzZLdVBfLVdNcXZieVl4S21QQUhHQTRESmJsdjdYSG42dw==';
+        const DEVICE_ID = 'sc12007';
+
+        const panSlider = document.getElementById('panSlider');
+        const tiltSlider = document.getElementById('tiltSlider');
+        const panValue = document.getElementById('panValue');
+        const tiltValue = document.getElementById('tiltValue');
+        const statusDiv = document.getElementById('status');
+
+        let currentPan = 90;
+        let currentTilt = 90;
+        let isDancing = false;
+
+        panSlider.addEventListener('input', (e) => {
+            currentPan = e.target.value;
+            panValue.textContent = currentPan + '°';
+        });
+
+        tiltSlider.addEventListener('input', (e) => {
+            currentTilt = e.target.value;
+            tiltValue.textContent = currentTilt + '°';
+        });
+
+        function updateStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 2000);
+        }
+
+        async function sendServoCommand(degree, motorMode) {
+            try {
+                const payload = {
+                    mode: "WRITE",
+                    device_id: DEVICE_ID,
+                    source: "API",
+                    api: "servo",
+                    type: "motor_degree",
+                    degree: degree.toString(),
+                    motor_mode: motorMode.toString()
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Api-Access-Key': API_ACCESS_KEY,
+                        'Api-Secret-Key': API_SECRET_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    return true;
+                } else {
+                    updateStatus('Error: ' + (data.message || 'Unknown error'), 'error');
+                    return false;
+                }
+            } catch (error) {
+                updateStatus('Network error: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function sendCommand() {
+            updateStatus('Sending command...', 'sending');
+            await sendServoCommand(currentPan, 1);
+            await new Promise(resolve => setTimeout(resolve, 200));
+            await sendServoCommand(currentTilt, 2);
+            updateStatus('Command sent successfully!', 'success');
+        }
+
+        function moveDirection(direction) {
+            const step = 15;
+            switch(direction) {
+                case 'up':
+                    // Up should increase tilt (move up)
+                    currentTilt = Math.min(180, parseInt(currentTilt) + step);
+                    break;
+                case 'down':
+                    // Down should decrease tilt (move down)
+                    currentTilt = Math.max(0, currentTilt - step);
+                    break;
+                case 'left':
+                    // Left should decrease pan (move left)
+                    currentPan = Math.max(0, currentPan - step);
+                    break;
+                case 'right':
+                    // Right should increase pan (move right)
+                    currentPan = Math.min(180, parseInt(currentPan) + step);
+                    break;
+            }
+            
+            panSlider.value = currentPan;
+            tiltSlider.value = currentTilt;
+            panValue.textContent = currentPan + '°';
+            tiltValue.textContent = currentTilt + '°';
+            
+            sendCommand();
+        }
+
+        function centerPosition() {
+            currentPan = 90;
+            currentTilt = 90;
+            panSlider.value = 90;
+            tiltSlider.value = 90;
+            panValue.textContent = '90°';
+            tiltValue.textContent = '90°';
+            sendCommand();
+        }
+
+        function preset(pan, tilt) {
+            currentPan = pan;
+            currentTilt = tilt;
+            panSlider.value = pan;
+            tiltSlider.value = tilt;
+            panValue.textContent = pan + '°';
+            tiltValue.textContent = tilt + '°';
+            sendCommand();
+        }
+
+        // Custom Lookup - Left to Right movement
+        async function customLookup() {
+            updateStatus('Executing Look Up (Left to Right)...', 'sending');
+            
+            try {
+                // Start from left
+                for (let pan = 0; pan <= 180; pan += 20) {
+                    currentPan = pan;
+                    currentTilt = 90;
+                    panSlider.value = pan;
+                    tiltSlider.value = 90;
+                    panValue.textContent = pan + '°';
+                    tiltValue.textContent = '90°';
+                    
+                    await sendServoCommand(pan, 1);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await sendServoCommand(90, 2);
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+                
+                updateStatus('Look Up completed!', 'success');
+                centerPosition();
+            } catch (error) {
+                updateStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Custom Scan - Up to Down movement
+        async function customScan() {
+            updateStatus('Executing Scan (Up to Down)...', 'sending');
+            
+            try {
+                // Start from up
+                for (let tilt = 0; tilt <= 180; tilt += 20) {
+                    currentPan = 90;
+                    currentTilt = tilt;
+                    panSlider.value = 90;
+                    tiltSlider.value = tilt;
+                    panValue.textContent = '90°';
+                    tiltValue.textContent = tilt + '°';
+                    
+                    await sendServoCommand(90, 1);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await sendServoCommand(tilt, 2);
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+                
+                updateStatus('Scan completed!', 'success');
+                centerPosition();
+            } catch (error) {
+                updateStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        // Custom Sweep - Mixed movement (both pan and tilt together)
+        async function customSweep() {
+            updateStatus('Executing Sweep (Mixed Movement)...', 'sending');
+            
+            try {
+                const positions = [
+                    [0, 0],       // Top-left
+                    [90, 0],      // Top-center
+                    [180, 0],     // Top-right
+                    [180, 90],    // Middle-right
+                    [180, 180],   // Bottom-right
+                    [90, 180],    // Bottom-center
+                    [0, 180],     // Bottom-left
+                    [0, 90],      // Middle-left
+                    [90, 90]      // Center
+                ];
+                
+                for (let [pan, tilt] of positions) {
+                    currentPan = pan;
+                    currentTilt = tilt;
+                    panSlider.value = pan;
+                    tiltSlider.value = tilt;
+                    panValue.textContent = pan + '°';
+                    tiltValue.textContent = tilt + '°';
+                    
+                    await sendServoCommand(pan, 1);
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await sendServoCommand(tilt, 2);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                updateStatus('Sweep completed!', 'success');
+            } catch (error) {
+                updateStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function danceMode() {
+            if (isDancing) {
+                updateStatus('Dance already in progress!', 'error');
+                return;
+            }
+
+            isDancing = true;
+            updateStatus('🎵 Dance mode started!', 'sending');
+
+            const startTime = Date.now();
+            const duration = 30000; // 30 seconds
+
+            while (Date.now() - startTime < duration) {
+                // Generate random positions
+                const randomPan = Math.floor(Math.random() * 181); // 0-180
+                const randomTilt = Math.floor(Math.random() * 181); // 0-180
+
+                // Update UI
+                currentPan = randomPan;
+                currentTilt = randomTilt;
+                panSlider.value = randomPan;
+                tiltSlider.value = randomTilt;
+                panValue.textContent = randomPan + '°';
+                tiltValue.textContent = randomTilt + '°';
+
+                // Send commands
+                await sendServoCommand(randomPan, 1);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                await sendServoCommand(randomTilt, 2);
+
+                // Wait between movements (random interval 300-800ms)
+                const waitTime = 300 + Math.random() * 500;
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+
+            isDancing = false;
+            updateStatus('💃 Dance mode completed!', 'success');
+            
+            // Return to center
+            centerPosition();
+        }
+    </script>
+</body>
+</html>
